@@ -13,6 +13,7 @@
 
     d3.select("svg")
       .append('path')
+      .attr('class', 'diploassist')
       .attr('d', f)
       .attr('stroke', failed ? '#ff0000' : '#000000')
       .attr('stroke-width', '2')
@@ -25,7 +26,10 @@
   }
 
   function render() {
-    // Remove existing convoy paths
+    // Clean up old lines
+    d3.selectAll('.diploassist').remove();
+
+    // Remove existing convoy diagrams over units
     // const paths = d3.selectAll("path[stroke-width='2'][fill='none'][stroke='#000000']")
     //   .filter((p, i, nodes) => {
     //     const path = d3.select(nodes[i]);
