@@ -29,6 +29,19 @@
     // Clean up old lines
     d3.selectAll('.diploassist').remove();
 
+    const orders = d3.select("#orders-text");
+    // fail fast on other pages
+    if (orders.empty()) return;
+
+    const convoys = orders.text().matchAll(/(\w{3}) C (\w{3}) - (\w{3})(?:\W+(S|F))?/gi);
+
+    for (const convoy of convoys) {
+      const status = convoy[4] || "S";
+      const fail = status == "F";
+      addConvoy(getCoordinates(convoy[1]), getCoordinates(convoy[2]), getCoordinates(convoy[3]), fail);
+    }
+
+
     // Remove existing convoy diagrams over units
     // const paths = d3.selectAll("path[stroke-width='2'][fill='none'][stroke='#000000']")
     //   .filter((p, i, nodes) => {
@@ -38,15 +51,6 @@
     //     return coords.length == 10;
     //   })
     //   .remove();
-
-    const orders = d3.select("#orders-text").text();
-    const convoys = orders.matchAll(/(\w{3}) C (\w{3}) - (\w{3})(?:\W+(S|F))?/gi);
-
-    for (const convoy of convoys) {
-      const status = convoy[4] || "S";
-      const fail = status == "F";
-      addConvoy(getCoordinates(convoy[1]), getCoordinates(convoy[2]), getCoordinates(convoy[3]), fail);
-    }
   }
 
   render();
