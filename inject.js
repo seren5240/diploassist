@@ -1,15 +1,15 @@
 (function() {
   // Remove existing convoy paths
-  const paths = d3.selectAll("path[stroke-width='2'][fill='none'][stroke='#000000']")
-    .filter((p, i, nodes) => {
-      const path = d3.select(nodes[i]);
-      const d = path.attr("d");
-      const coords = d.split(",");
-      return coords.length == 10;
-    })
-    .remove();
+  // const paths = d3.selectAll("path[stroke-width='2'][fill='none'][stroke='#000000']")
+  //   .filter((p, i, nodes) => {
+  //     const path = d3.select(nodes[i]);
+  //     const d = path.attr("d");
+  //     const coords = d.split(",");
+  //     return coords.length == 10;
+  //   })
+  //   .remove();
 
-  function addConvoy(unit, from, to) {
+  function addConvoy(unit, from, to, failed) {
     var f = unit;
     var v = from;
     var E = to;
@@ -24,7 +24,7 @@
     d3.select("svg")
       .append('path')
       .attr('d', f)
-      .attr('stroke', '#000000')
+      .attr('stroke', failed ? '#ff0000' : '#000000')
       .attr('stroke-width', '2')
       .attr('stroke-dasharray', '10,10')
       .attr('fill', 'none');
@@ -35,9 +35,13 @@
   }
 
   const orders = d3.select("#orders-text").text();
-  const convoys = orders.matchAll(/(\w{3}) C (\w{3}) - (\w{3})/gi);
+  const convoys = orders.matchAll(/(\w{3}) C (\w{3}) - (\w{3})\W+(S|F)/gi);
+
+  console.log("orders", orders, convoys);
 
   for (const convoy of convoys) {
-    addConvoy(getCoordinates(convoy[1]), getCoordinates(convoy[2]), getCoordinates(convoy[3]));
+    const status = convoy[4];
+    const fail = status == "F";
+    addConvoy(getCoordinates(convoy[1]), getCoordinates(convoy[2]), getCoordinates(convoy[3]), fail);
   }
 })();

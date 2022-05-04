@@ -2,9 +2,6 @@
   "name": "Diplomacy UI Improver",
   "version": "0.1.1",
   "manifest_version": 3,
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {},
   "content_scripts": [
     {
