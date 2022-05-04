@@ -1,14 +1,4 @@
-(function() {
-  // Remove existing convoy paths
-  // const paths = d3.selectAll("path[stroke-width='2'][fill='none'][stroke='#000000']")
-  //   .filter((p, i, nodes) => {
-  //     const path = d3.select(nodes[i]);
-  //     const d = path.attr("d");
-  //     const coords = d.split(",");
-  //     return coords.length == 10;
-  //   })
-  //   .remove();
-
+(function () {
   function addConvoy(unit, from, to, failed) {
     var f = unit;
     var v = from;
@@ -34,14 +24,31 @@
     return territories[terr].unit_center;
   }
 
-  const orders = d3.select("#orders-text").text();
-  const convoys = orders.matchAll(/(\w{3}) C (\w{3}) - (\w{3})\W+(S|F)/gi);
+  function render() {
+    // Remove existing convoy paths
+    // const paths = d3.selectAll("path[stroke-width='2'][fill='none'][stroke='#000000']")
+    //   .filter((p, i, nodes) => {
+    //     const path = d3.select(nodes[i]);
+    //     const d = path.attr("d");
+    //     const coords = d.split(",");
+    //     return coords.length == 10;
+    //   })
+    //   .remove();
 
-  console.log("orders", orders, convoys);
+    const orders = d3.select("#orders-text").text();
+    const convoys = orders.matchAll(/(\w{3}) C (\w{3}) - (\w{3})(?:\W+(S|F))?/gi);
 
-  for (const convoy of convoys) {
-    const status = convoy[4];
-    const fail = status == "F";
-    addConvoy(getCoordinates(convoy[1]), getCoordinates(convoy[2]), getCoordinates(convoy[3]), fail);
+    for (const convoy of convoys) {
+      const status = convoy[4] || "S";
+      const fail = status == "F";
+      addConvoy(getCoordinates(convoy[1]), getCoordinates(convoy[2]), getCoordinates(convoy[3]), fail);
+    }
   }
+
+  render();
+
+  // Listen for changes to the orders text
+  d3.select("#orders-text").on("DOMSubtreeModified", function () {
+    render();
+  });
 })();
