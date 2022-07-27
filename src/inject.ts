@@ -4,6 +4,8 @@ interface Coordinate {
 }
 
 (function () {
+  let doNotRerenderTopshare = false;
+
   function addConvoy(
       centerOfConvoyingUnit: Coordinate,
       centerOfConvoyedUnit: Coordinate,
@@ -66,7 +68,42 @@ interface Coordinate {
     }
   }
 
+  function getTopshare(player: string): number {
+    const playerName = player.split("#")[0].trim();
+    const topshare = parseInt((parseInt(toppers[playerName]) / parseInt(allPlayers[playerName]) * 100).toPrecision(2));
+    return topshare ? topshare : 0;
+  }
+
+  function loadTopshare(): void {
+    const info = d3.select("#info");
+    let index = 0;
+
+    if (info.empty()) { 
+      return;
+    }
+
+    const players = Array.from(info.text().matchAll(/\S* \S*#([0-9]{4}|None)\s+\—\s+([a-zA-Z])*/gi));
+
+    if (players.length) {
+      doNotRerenderTopshare = true;
+    }
+
+    d3.select("#info").select('ul').selectAll('li').text(function(d){
+      const newText = `${players[index][0]}:  Topshare = ${getTopshare(players[index][0])}%`;
+      index += 1;
+      return newText;
+    });
+  }
+
   render();
+  loadTopshare();
+
+  d3.select("#info").on("DOMSubtreeModified", function() {
+    if (doNotRerenderTopshare) {
+      return;
+    }
+    loadTopshare();
+  })
 
   // Listen for changes to the orders text
   d3.select("#orders-text").on("DOMSubtreeModified", function () {
