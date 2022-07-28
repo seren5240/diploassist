@@ -11,8 +11,9 @@
       ],
       "js": [
         "vendor/d3.min.js",
-        "map.js",
-        "inject.js"
+        "built/map.js",
+        "built/inject.js",
+        "built/players.js"
       ]
     }
   ]
