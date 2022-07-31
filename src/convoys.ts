@@ -61,12 +61,12 @@ function addConvoy(
     centerOfConvoyDestination: Coordinate,
     didConvoyFail: boolean
 ): void {
-const convoy = new Convoy(
-    centerOfConvoyingUnit,
-    centerOfConvoyedUnit,
-    centerOfConvoyDestination,
-    didConvoyFail
-);
+    const convoy = new Convoy(
+        centerOfConvoyingUnit,
+        centerOfConvoyedUnit,
+        centerOfConvoyDestination,
+        didConvoyFail
+    );
 
-convoy.drawConvoyAssistPath();
+    convoy.drawConvoyAssistPath();
 }
