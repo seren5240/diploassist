@@ -11,9 +11,11 @@
       ],
       "js": [
         "vendor/d3.min.js",
+        "vendor/supabase.min.js",
+        "built/convoys.js",
         "built/map.js",
         "built/inject.js",
-        "built/players.js"
+        "built/topshare.js"
       ]
     }
   ]
