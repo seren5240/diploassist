@@ -36,9 +36,9 @@ async function loadTopshares(players: RegExpMatchArray[]): Promise<void> {
     await getTopshareForPlayer(player[0])
   ));
 
-  d3.select("#info").select('ul').selectAll('li').text(function(d){
-    const newText = `${players[index][0]}:  Topshare = ${topshares[index]}%`;
+  d3.select("#info").select('ul').selectAll('li').append("text").text(function(d){
+    const topshareText = `:  Topshare = ${topshares[index]}%`;
     index += 1;
-    return newText;
+    return topshareText;
   });
 }
