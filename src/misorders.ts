@@ -170,3 +170,12 @@ function checkMoveOrderForMisorder(moveOrder: RegExpMatchArray): void {
     colorMisorderRed(pathsOfMisorder);
   }
 }
+
+function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
+  // fail if: destination territory unreachable by supporting unit
+  // fail if: supported move path is invalid move order
+  const isArmy: boolean = supportOrder[0][0] === "A";
+  const centerOfSupportingUnit: Coordinate =
+    territories[supportOrder[1]].unit_center;
+  console.log(supportOrder);
+}
