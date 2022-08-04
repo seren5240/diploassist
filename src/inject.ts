@@ -38,6 +38,16 @@
     for (const moveOrder of moveOrders) {
       checkMoveOrderForMisorder(moveOrder);
     }
+
+    const supportOrders: RegExpMatchArray[] = Array.from(
+      orders
+        .text()
+        .matchAll(/[AF] (\w{3}) S (\w{3})(\/[sn]c)? - (\w{3})(\/[sn]c)?/gi)
+    );
+
+    for (const supportOrder of supportOrders) {
+      checkSupportOrderForMisorder(supportOrder);
+    }
   }
 
   render();
