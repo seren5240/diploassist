@@ -1,3 +1,4 @@
+
 const SUPABASE_API_URL = "https://bnyhrwwoycrqyusnmpuy.supabase.co";
 const SUPABASE_PUBLIC_API_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWhyd3dveWNycXl1c25tcHV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTkwNzkwNjAsImV4cCI6MTk3NDY1NTA2MH0.kT5T8-HmkfHg75a-DDJ18baizzn_Qbuva0MHBs2NO98";
@@ -8,7 +9,6 @@ const sb = supabase.createClient(SUPABASE_API_URL, SUPABASE_PUBLIC_API_KEY);
 
 async function sendDatabaseRequestForTopshare(player: string): Promise<number> {
   const { data, error } = await sb.rpc("get_topshare", { player });
-
   return data;
 }
 
