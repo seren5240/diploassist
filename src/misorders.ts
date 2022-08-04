@@ -88,15 +88,45 @@ function colorMisorderRed(misorderPaths: string[]): void {
     .attr("fill", "#ff0000");
 }
 
+function isTerritoryLand(terr: string): boolean {
+  return territories[terr].type === "l";
+}
+
+function isTerritoryWater(terr: string): boolean {
+  return !isTerritoryLand(terr);
+}
+
+function doesTerritoryBorderWater(terr: string): boolean {
+  return !!Object.keys(territories[terr].w_neighbors).length;
+}
+
 function isOrderBetweenCoastalTerritories(
   origin: string,
   destination: string
 ): boolean {
-  return !!(
-    territories[destination].type === "l" &&
-    Object.keys(territories[origin].w_neighbors).length &&
-    Object.keys(territories[destination].w_neighbors).length
+  return (
+    isTerritoryLand(origin) &&
+    isTerritoryLand(destination) &&
+    doesTerritoryBorderWater(origin) &&
+    doesTerritoryBorderWater(destination)
   );
+}
+
+function getValidPathsForFleetOnLand(origin: string): Record<string, number> {
+  return {
+    ...territories[origin].w_neighbors,
+    ...Object.keys(territories[origin].l_neighbors).filter((x) =>
+      isOrderBetweenCoastalTerritories(origin, x)
+    ),
+  };
+}
+
+function getValidPathsForFleetWhenCoastsAreIrrelevant(
+  origin: string
+): Record<string, number> {
+  return isTerritoryWater(origin)
+    ? { ...territories[origin].l_neighbors, ...territories[origin].w_neighbors }
+    : getValidPathsForFleetOnLand(origin);
 }
 
 function getValidPathsWhenCoastsAreIrrelevant(
@@ -105,7 +135,7 @@ function getValidPathsWhenCoastsAreIrrelevant(
 ): Record<string, number> {
   return isArmy
     ? territories[origin].l_neighbors
-    : territories[origin].w_neighbors;
+    : getValidPathsForFleetWhenCoastsAreIrrelevant(origin);
 }
 
 function getValidPathsForCoastalFleet(
