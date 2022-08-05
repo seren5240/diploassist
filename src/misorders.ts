@@ -60,7 +60,7 @@ function calculatePathsFromUnitCenters(
   return [movePath, arrowheadPath];
 }
 
-function generatePathsOfMisorder(misorder: RegExpMatchArray): string[] {
+function generatePathsOfMoveMisorder(misorder: RegExpMatchArray): string[] {
   const centerOfOrigin = getCenterOfOriginFromOriginRegexArray(
     misorder.slice(1, 3)
   );
@@ -71,7 +71,7 @@ function generatePathsOfMisorder(misorder: RegExpMatchArray): string[] {
   return calculatePathsFromUnitCenters(centerOfOrigin, centerOfDestination);
 }
 
-function colorMisorderRed(misorderPaths: string[]): void {
+function colorMoveMisorderRed(misorderPaths: string[]): void {
   d3.select("svg")
     .selectAll("path")
     .filter(function () {
@@ -166,8 +166,74 @@ function checkMoveOrderForMisorder(moveOrder: RegExpMatchArray): void {
   }
 
   if (!(destination in validPaths)) {
-    const pathsOfMisorder = generatePathsOfMisorder(moveOrder);
-    colorMisorderRed(pathsOfMisorder);
+    const pathsOfMisorder = generatePathsOfMoveMisorder(moveOrder);
+    colorMoveMisorderRed(pathsOfMisorder);
+  }
+}
+
+function generatePathOfSupportHoldMisorder(
+  supportOrder: RegExpMatchArray
+): string {
+  const centerOfSupportedUnit = getCenterOfOriginFromOriginRegexArray(
+    supportOrder.slice(3, 5)
+  );
+
+  const centerOfSupportingUnit = getCenterOfOriginFromOriginRegexArray(
+    supportOrder.slice(1, 3)
+  );
+
+  const offset = Math.atan2(
+    centerOfSupportedUnit.y - centerOfSupportingUnit.y,
+    centerOfSupportedUnit.x - centerOfSupportingUnit.x
+  );
+
+  return [
+    "M",
+    centerOfSupportingUnit.x + 10 * Math.cos(offset),
+    ",",
+    centerOfSupportingUnit.y + 10 * Math.sin(offset),
+    "L",
+    centerOfSupportedUnit.x - 10 * Math.cos(offset),
+    ",",
+    centerOfSupportedUnit.y - 10 * Math.sin(offset),
+  ].join("");
+
+  /*
+(f = Math.atan2(O.y - h.y, O.x - h.x)),
+(O = ["M", h.x + 10 * Math.cos(f), ",", h.y + 10 * Math.sin(f), "L", O.x - 10 * Math.cos(f), ",", O.y - 10 * Math.sin(f)].join("")),
+*/
+  // return "";
+}
+
+function colorSupportHoldMisorderRed(misorderPath: string): void {
+  d3.select("svg")
+    .selectAll("path")
+    .filter(function () {
+      return d3.select(this).attr("d") == misorderPath;
+    })
+    .attr("stroke", "#ff0000");
+}
+
+function checkSupportHoldOrderForMisorder(
+  supportOrder: RegExpMatchArray
+): void {
+  // fail if: destination territory unreachable by supporting unit
+  const isArmy: boolean = supportOrder[0][0] === "A";
+  const origin: string[] = supportOrder.slice(1, 3);
+  const destination: string = [supportOrder[3], supportOrder[4]]
+    .join("")
+    .replace("/", "");
+  let validPaths: Record<string, number>;
+
+  if (!origin[1]) {
+    validPaths = getValidPathsWhenCoastsAreIrrelevant(origin[0], isArmy);
+  } else {
+    validPaths = getValidPathsForCoastalFleet(origin[0], origin[1] === "/sc");
+  }
+
+  if (!(destination in validPaths)) {
+    const misorderPath = generatePathOfSupportHoldMisorder(supportOrder);
+    colorSupportHoldMisorderRed(misorderPath);
   }
 }
 
@@ -178,4 +244,11 @@ function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
   const centerOfSupportingUnit: Coordinate =
     territories[supportOrder[1]].unit_center;
   console.log(supportOrder);
+
+  const isSupportMove: boolean = !!supportOrder[5];
+
+  if (isSupportMove) {
+  } else {
+    checkSupportHoldOrderForMisorder(supportOrder);
+  }
 }

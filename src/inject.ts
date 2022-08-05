@@ -42,7 +42,9 @@
     const supportOrders: RegExpMatchArray[] = Array.from(
       orders
         .text()
-        .matchAll(/[AF] (\w{3}) S (\w{3})(\/[sn]c)? - (\w{3})(\/[sn]c)?/gi)
+        .matchAll(
+          /[AF] (\w{3})(\/[sn]c)? S (\w{3})(\/[sn]c)?( - (\w{3})(\/[sn]c)?)?/gi
+        )
     );
 
     for (const supportOrder of supportOrders) {
