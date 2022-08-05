@@ -1,3 +1,78 @@
+class SupportMove {
+  private convoyingUnit: Coordinate;
+  private midpoint: Coordinate;
+  private quarterPoint: Coordinate;
+  private threeQuartersPoint: Coordinate;
+  private didConvoyFail: boolean;
+  private xInflectionIncrement: number;
+  private yInflectionIncrement: number;
+
+  constructor(
+    centerOfConvoyingUnit: Coordinate,
+    centerOfConvoyedUnit: Coordinate,
+    centerOfConvoyDestination: Coordinate,
+    didConvoyFail: boolean
+  ) {
+    this.convoyingUnit = centerOfConvoyingUnit;
+    this.midpoint = {
+      x: (centerOfConvoyedUnit.x + centerOfConvoyDestination.x) / 2,
+      y: (centerOfConvoyedUnit.y + centerOfConvoyDestination.y) / 2,
+    };
+    this.quarterPoint = {
+      x: (3 * centerOfConvoyedUnit.x + centerOfConvoyDestination.x) / 4,
+      y: (3 * centerOfConvoyedUnit.y + centerOfConvoyDestination.y) / 4,
+    };
+    this.threeQuartersPoint = {
+      x: (centerOfConvoyedUnit.x + 3 * centerOfConvoyDestination.x) / 4,
+      y: (centerOfConvoyedUnit.y + 3 * centerOfConvoyDestination.y) / 4,
+    };
+    this.didConvoyFail = didConvoyFail;
+    [this.xInflectionIncrement, this.yInflectionIncrement] =
+      this.setConvoyHelperInflectionIncrement(
+        centerOfConvoyedUnit,
+        centerOfConvoyDestination
+      );
+  }
+
+  private setConvoyHelperInflectionIncrement(
+    centerOfConvoyedUnit: Coordinate,
+    centerOfConvoyDestination: Coordinate
+  ): [number, number] {
+    if (centerOfConvoyDestination.x > centerOfConvoyedUnit.x) {
+      return [
+        0.05 * (centerOfConvoyDestination.y - centerOfConvoyedUnit.y),
+        0.05 * (centerOfConvoyedUnit.x - centerOfConvoyDestination.x),
+      ];
+    } else {
+      return [
+        0.05 * (centerOfConvoyedUnit.y - centerOfConvoyDestination.y),
+        0.05 * (centerOfConvoyDestination.x - centerOfConvoyedUnit.x),
+      ];
+    }
+  }
+
+  public getSupportMoveAssistPath(): string {
+    return [
+      "M",
+      this.convoyingUnit.x,
+      ",",
+      this.convoyingUnit.y,
+      "C",
+      this.midpoint.x,
+      ",",
+      this.midpoint.y,
+      " ",
+      this.quarterPoint.x + this.yInflectionIncrement,
+      ",",
+      this.quarterPoint.y + this.xInflectionIncrement,
+      " ",
+      this.threeQuartersPoint.x,
+      ",",
+      this.threeQuartersPoint.y,
+    ].join("");
+  }
+}
+
 function getCenterOfOriginFromOriginRegexArray(origin: string[]) {
   if (!origin[1]) {
     return territories[origin[0]].unit_center;
@@ -230,11 +305,57 @@ function checkSupportHoldOrderForMisorder(
   }
 }
 
+function checkSupportMoveOrderForMisorder(
+  supportOrder: RegExpMatchArray
+): void {
+  // fail if: destination territory unreachable by supporting unit
+  // fail if: supported move path is invalid move order
+  const isArmy: boolean = supportOrder[0][0] === "A";
+  const supportingUnit: string[] = supportOrder.slice(1, 3);
+  const supportMoveOrigin: string[] = supportOrder.slice(3, 5);
+  const supportMoveDestination: string = supportOrder[5]
+    .substring(3)
+    .replace("/", "");
+
+  let doesSupportMoveFail: boolean = false;
+
+  // destination territory unreachable by supporting unit
+  let validPaths: Record<string, number>;
+
+  if (!supportingUnit[1]) {
+    validPaths = getValidPathsWhenCoastsAreIrrelevant(
+      supportingUnit[0],
+      isArmy
+    );
+  } else {
+    validPaths = getValidPathsForCoastalFleet(
+      supportingUnit[0],
+      supportingUnit[1] === "/sc"
+    );
+  }
+
+  if (!(supportMoveDestination in validPaths)) {
+    doesSupportMoveFail = true;
+    console.log(`failed: ${supportOrder}`);
+  }
+
+  // supported move path is invalid move order
+  // skip check if already failed by first criteria above
+  if (!doesSupportMoveFail) {
+  }
+}
+
 function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
   const isSupportMove: boolean = !!supportOrder[5];
 
   if (isSupportMove) {
+<<<<<<< HEAD
     return;
+=======
+    checkSupportMoveOrderForMisorder(supportOrder);
+  } else {
+    checkSupportHoldOrderForMisorder(supportOrder);
+>>>>>>> 304a494... Mark support moves failed if destination unreachable by supporter
   }
   checkSupportHoldOrderForMisorder(supportOrder);
 }
