@@ -224,7 +224,7 @@ function checkSupportHoldOrderForMisorder(
 
   const validPaths = getValidPathsFromOrigin(origin, isArmy);
 
-  if (!(destination in validPaths)) {
+  if (!(destination.substring(0, 3) in validPaths)) {
     const misorderPath = generatePathOfSupportHoldMisorder(supportOrder);
     colorSupportHoldMisorderRed(misorderPath);
   }
