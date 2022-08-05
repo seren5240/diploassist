@@ -234,7 +234,7 @@ function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
   const isSupportMove: boolean = !!supportOrder[5];
 
   if (isSupportMove) {
-  } else {
-    checkSupportHoldOrderForMisorder(supportOrder);
+    return;
   }
+  checkSupportHoldOrderForMisorder(supportOrder);
 }
