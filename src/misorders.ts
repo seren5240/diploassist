@@ -213,32 +213,6 @@ function colorSupportHoldMisorderRed(misorderPath: string): void {
     .attr("stroke", "#ff0000");
 }
 
-function colorSupportMoveMisorderRed(
-  misorderPath: string,
-  circleCenter: Coordinate
-): void {
-  // Backstabbr applies additional transformation to support move paths after the extracted code
-  d3.select("svg")
-    .selectAll("path")
-    .filter(function () {
-      return (
-        d3.select(this).attr("d").substring(0, 15) ===
-        misorderPath.substring(0, 15)
-      );
-    })
-    .attr("stroke", "#ff0000");
-
-  d3.select("svg")
-    .selectAll("circle")
-    .filter(function () {
-      return (
-        d3.select(this).attr("cx") === circleCenter.x.toString() &&
-        d3.select(this).attr("cy") === circleCenter.y.toString()
-      );
-    })
-    .attr("stroke", "#ff0000");
-}
-
 function checkSupportHoldOrderForMisorder(
   supportOrder: RegExpMatchArray
 ): void {
@@ -264,16 +238,6 @@ function isTerritoryOccupiedByArmy(terr: string): boolean {
   const orders = d3.select("#orders-text").text();
 
   const unitRegex = new RegExp(`[AF] ${terr}`, "gi");
-
-  // delayed rendering causes error sometimes
-  // try {
-  //   const test = orders.match(unitRegex)[0][0] === "A";
-  // } catch (e) {
-  //   console.log(`error when checking terr ${terr}`);
-  //   console.log(`error when unit regex of ${unitRegex}`);
-  //   console.log(`orders is currently ${orders}`);
-  //   console.log(`the match got ${orders.match(unitRegex)}`);
-  // }
 
   return orders.match(unitRegex)[0][0] === "A";
 }
@@ -318,20 +282,6 @@ function checkSupportMoveOrderForMisorder(
   // supported move path is invalid move order
   // skip check if already failed by first criteria above
   if (!doesSupportMoveFail) {
-    // let moveValidPaths: Record<string, number>;
-
-    // if (!supportMoveOrigin[1]) {
-    //   validPaths = getValidPathsWhenCoastsAreIrrelevant(
-    //     supportMoveOrigin[0],
-    //     supportedUnitIsArmy
-    //   );
-    // } else {
-    //   validPaths = getValidPathsForCoastalFleet(
-    //     supportMoveOrigin[0],
-    //     supportMoveOrigin[1] === "/sc"
-    //   );
-    //
-
     if (
       isSupportedUnitArmy &&
       isOrderBetweenCoastalTerritories(
@@ -366,10 +316,6 @@ function checkSupportMoveOrderForMisorder(
       centerOfSupportDestination
     );
 
-    // const supportPath: string = support.getSupportMoveAssistPath();
-    // const circleCenter: Coordinate = support.getSupportMoveAssistCircleCenter();
-    // console.log(`support path is ${supportPath}`);
-    // console.log(`circle center is ${(circleCenter.x, circleCenter.y)}`);
     support.colorSupportMoveMisorderRed();
   }
 }
