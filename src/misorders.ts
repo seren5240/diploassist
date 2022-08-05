@@ -3,15 +3,13 @@ class SupportMove {
   private midpoint: Coordinate;
   private quarterPoint: Coordinate;
   private threeQuartersPoint: Coordinate;
-  private didConvoyFail: boolean;
   private xInflectionIncrement: number;
   private yInflectionIncrement: number;
 
   constructor(
     centerOfConvoyingUnit: Coordinate,
     centerOfConvoyedUnit: Coordinate,
-    centerOfConvoyDestination: Coordinate,
-    didConvoyFail: boolean
+    centerOfConvoyDestination: Coordinate
   ) {
     this.convoyingUnit = centerOfConvoyingUnit;
     this.midpoint = {
@@ -26,7 +24,6 @@ class SupportMove {
       x: (centerOfConvoyedUnit.x + 3 * centerOfConvoyDestination.x) / 4,
       y: (centerOfConvoyedUnit.y + 3 * centerOfConvoyDestination.y) / 4,
     };
-    this.didConvoyFail = didConvoyFail;
     [this.xInflectionIncrement, this.yInflectionIncrement] =
       this.setConvoyHelperInflectionIncrement(
         centerOfConvoyedUnit,
@@ -288,6 +285,19 @@ function colorSupportHoldMisorderRed(misorderPath: string): void {
     .attr("stroke", "#ff0000");
 }
 
+function colorSupportMoveMisorderRed(misorderPath: string): void {
+  // Need to investigate why unminified js does not produce correct path
+  d3.select("svg")
+    .selectAll("path")
+    .filter(function () {
+      return (
+        d3.select(this).attr("d").substring(0, 15) ===
+        misorderPath.substring(0, 15)
+      );
+    })
+    .attr("stroke", "#ff0000");
+}
+
 function checkSupportHoldOrderForMisorder(
   supportOrder: RegExpMatchArray
 ): void {
@@ -305,14 +315,39 @@ function checkSupportHoldOrderForMisorder(
   }
 }
 
+function isTerritoryOccupiedByArmy(terr: string): boolean {
+  if (isTerritoryWater(terr)) {
+    return false;
+  }
+
+  const orders = d3.select("#orders-text").text();
+
+  const unitRegex = new RegExp(`[AF] ${terr}`, "gi");
+
+  // delayed rendering causes error sometimes
+  // try {
+  //   const test = orders.match(unitRegex)[0][0] === "A";
+  // } catch (e) {
+  //   console.log(`error when checking terr ${terr}`);
+  //   console.log(`error when unit regex of ${unitRegex}`);
+  //   console.log(`orders is currently ${orders}`);
+  //   console.log(`the match got ${orders.match(unitRegex)}`);
+  // }
+
+  return orders.match(unitRegex)[0][0] === "A";
+}
+
 function checkSupportMoveOrderForMisorder(
   supportOrder: RegExpMatchArray
 ): void {
   // fail if: destination territory unreachable by supporting unit
   // fail if: supported move path is invalid move order
-  const isArmy: boolean = supportOrder[0][0] === "A";
+  const supportingUnitIsArmy: boolean = supportOrder[0][0] === "A";
   const supportingUnit: string[] = supportOrder.slice(1, 3);
   const supportMoveOrigin: string[] = supportOrder.slice(3, 5);
+  const supportedUnitIsArmy: boolean = isTerritoryOccupiedByArmy(
+    supportOrder[3]
+  );
   const supportMoveDestination: string = supportOrder[5]
     .substring(3)
     .replace("/", "");
@@ -325,7 +360,7 @@ function checkSupportMoveOrderForMisorder(
   if (!supportingUnit[1]) {
     validPaths = getValidPathsWhenCoastsAreIrrelevant(
       supportingUnit[0],
-      isArmy
+      supportingUnitIsArmy
     );
   } else {
     validPaths = getValidPathsForCoastalFleet(
@@ -342,6 +377,48 @@ function checkSupportMoveOrderForMisorder(
   // supported move path is invalid move order
   // skip check if already failed by first criteria above
   if (!doesSupportMoveFail) {
+    let moveValidPaths: Record<string, number>;
+
+    if (!supportMoveOrigin[1]) {
+      validPaths = getValidPathsWhenCoastsAreIrrelevant(
+        supportMoveOrigin[0],
+        supportedUnitIsArmy
+      );
+    } else {
+      validPaths = getValidPathsForCoastalFleet(
+        supportMoveOrigin[0],
+        supportMoveOrigin[1] === "/sc"
+      );
+    }
+
+    if (!(supportMoveDestination in validPaths)) {
+      doesSupportMoveFail = true;
+      console.log(`failed: ${supportOrder}`);
+    }
+  }
+
+  if (doesSupportMoveFail) {
+    const centerOfSupportingUnit: Coordinate =
+      getCenterOfOriginFromOriginRegexArray(supportingUnit);
+    const centerOfSupportedUnit: Coordinate =
+      getCenterOfOriginFromOriginRegexArray(supportMoveOrigin);
+    const centerOfSupportDestination: Coordinate =
+      getCenterOfDestinationFromDestinationRegexArray(supportOrder.slice(6, 8));
+    const support: SupportMove = new SupportMove(
+      centerOfSupportingUnit,
+      centerOfSupportedUnit,
+      centerOfSupportDestination
+    );
+
+    const supportPath: string = support.getSupportMoveAssistPath();
+    console.log(`support path is ${supportPath}`);
+    colorSupportMoveMisorderRed(supportPath);
+
+    // M279,283C342,282.5 349.6,302 332.5,266.25
+
+    /*
+"M279,283C342,282.5,354.75,296.85,332.5,266.25" stroke-dasharray="2,2" stroke-width="2" transform="matrix(1,0,0,1,0,0)" style="-webkit-tap-highlight-color: rgba(0, 0, 0, 0);"></path>
+    */
   }
 }
 
