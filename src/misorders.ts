@@ -18,7 +18,7 @@ function getCenterOfDestinationFromDestinationRegexArray(
   return territories[destination[0]].coasts[destination[1].substring(1)];
 }
 
-function calculatePathsFromUnitCenters(
+function calculateMovePathsFromUnitCenters(
   centerOfOrigin: Coordinate,
   centerOfDestination: Coordinate
 ): string[] {
@@ -68,7 +68,7 @@ function generatePathsOfMoveMisorder(misorder: RegExpMatchArray): string[] {
     misorder.slice(3, 5)
   );
 
-  return calculatePathsFromUnitCenters(centerOfOrigin, centerOfDestination);
+  return calculateMovePathsFromUnitCenters(centerOfOrigin, centerOfDestination);
 }
 
 function colorMoveMisorderRed(misorderPaths: string[]): void {
@@ -147,23 +147,28 @@ function getValidPathsForCoastalFleet(
     : territories[origin].w_neighbors.nc || territories[origin].w_neighbors.ec;
 }
 
+function getValidPathsFromOrigin(
+  origin: string[],
+  isArmy: boolean
+): Record<string, number> {
+  if (!origin[1]) {
+    return getValidPathsWhenCoastsAreIrrelevant(origin[0], isArmy);
+  }
+  return getValidPathsForCoastalFleet(origin[0], origin[1] === "/sc");
+}
+
 function checkMoveOrderForMisorder(moveOrder: RegExpMatchArray): void {
   const isArmy: boolean = moveOrder[0][0] === "A";
   const origin: string[] = moveOrder.slice(1, 3);
   const destination: string = [moveOrder[3], moveOrder[4]]
     .join("")
     .replace("/", "");
-  let validPaths: Record<string, number>;
 
   if (isArmy && isOrderBetweenCoastalTerritories(origin[0], destination)) {
     return;
   }
 
-  if (!origin[1]) {
-    validPaths = getValidPathsWhenCoastsAreIrrelevant(origin[0], isArmy);
-  } else {
-    validPaths = getValidPathsForCoastalFleet(origin[0], origin[1] === "/sc");
-  }
+  const validPaths = getValidPathsFromOrigin(origin, isArmy);
 
   if (!(destination in validPaths)) {
     const pathsOfMisorder = generatePathsOfMoveMisorder(moveOrder);
@@ -197,12 +202,6 @@ function generatePathOfSupportHoldMisorder(
     ",",
     centerOfSupportedUnit.y - 10 * Math.sin(offset),
   ].join("");
-
-  /*
-(f = Math.atan2(O.y - h.y, O.x - h.x)),
-(O = ["M", h.x + 10 * Math.cos(f), ",", h.y + 10 * Math.sin(f), "L", O.x - 10 * Math.cos(f), ",", O.y - 10 * Math.sin(f)].join("")),
-*/
-  // return "";
 }
 
 function colorSupportHoldMisorderRed(misorderPath: string): void {
@@ -217,19 +216,13 @@ function colorSupportHoldMisorderRed(misorderPath: string): void {
 function checkSupportHoldOrderForMisorder(
   supportOrder: RegExpMatchArray
 ): void {
-  // fail if: destination territory unreachable by supporting unit
   const isArmy: boolean = supportOrder[0][0] === "A";
   const origin: string[] = supportOrder.slice(1, 3);
   const destination: string = [supportOrder[3], supportOrder[4]]
     .join("")
     .replace("/", "");
-  let validPaths: Record<string, number>;
 
-  if (!origin[1]) {
-    validPaths = getValidPathsWhenCoastsAreIrrelevant(origin[0], isArmy);
-  } else {
-    validPaths = getValidPathsForCoastalFleet(origin[0], origin[1] === "/sc");
-  }
+  const validPaths = getValidPathsFromOrigin(origin, isArmy);
 
   if (!(destination in validPaths)) {
     const misorderPath = generatePathOfSupportHoldMisorder(supportOrder);
@@ -238,13 +231,6 @@ function checkSupportHoldOrderForMisorder(
 }
 
 function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
-  // fail if: destination territory unreachable by supporting unit
-  // fail if: supported move path is invalid move order
-  const isArmy: boolean = supportOrder[0][0] === "A";
-  const centerOfSupportingUnit: Coordinate =
-    territories[supportOrder[1]].unit_center;
-  console.log(supportOrder);
-
   const isSupportMove: boolean = !!supportOrder[5];
 
   if (isSupportMove) {
