@@ -68,6 +68,10 @@ class SupportMove {
       this.threeQuartersPoint.y,
     ].join("");
   }
+
+  public getSupportMoveAssistCircleCenter(): Coordinate {
+    return this.threeQuartersPoint;
+  }
 }
 
 function getCenterOfOriginFromOriginRegexArray(origin: string[]) {
@@ -180,7 +184,7 @@ function isOrderBetweenCoastalTerritories(
     isTerritoryLand(origin) &&
     isTerritoryLand(destination) &&
     doesTerritoryBorderWater(origin) &&
-    doesTerritoryBorderWater(destination)
+    doesTerritoryBorderWater(destination.substring(0, 3))
   );
 }
 
@@ -285,7 +289,10 @@ function colorSupportHoldMisorderRed(misorderPath: string): void {
     .attr("stroke", "#ff0000");
 }
 
-function colorSupportMoveMisorderRed(misorderPath: string): void {
+function colorSupportMoveMisorderRed(
+  misorderPath: string,
+  circleCenter: Coordinate
+): void {
   // Need to investigate why unminified js does not produce correct path
   d3.select("svg")
     .selectAll("path")
@@ -293,6 +300,16 @@ function colorSupportMoveMisorderRed(misorderPath: string): void {
       return (
         d3.select(this).attr("d").substring(0, 15) ===
         misorderPath.substring(0, 15)
+      );
+    })
+    .attr("stroke", "#ff0000");
+
+  d3.select("svg")
+    .selectAll("circle")
+    .filter(function () {
+      return (
+        d3.select(this).attr("cx") === circleCenter.x.toString() &&
+        d3.select(this).attr("cy") === circleCenter.y.toString()
       );
     })
     .attr("stroke", "#ff0000");
@@ -345,7 +362,7 @@ function checkSupportMoveOrderForMisorder(
   const supportingUnitIsArmy: boolean = supportOrder[0][0] === "A";
   const supportingUnit: string[] = supportOrder.slice(1, 3);
   const supportMoveOrigin: string[] = supportOrder.slice(3, 5);
-  const supportedUnitIsArmy: boolean = isTerritoryOccupiedByArmy(
+  const isSupportedUnitArmy: boolean = isTerritoryOccupiedByArmy(
     supportOrder[3]
   );
   const supportMoveDestination: string = supportOrder[5]
@@ -377,21 +394,36 @@ function checkSupportMoveOrderForMisorder(
   // supported move path is invalid move order
   // skip check if already failed by first criteria above
   if (!doesSupportMoveFail) {
-    let moveValidPaths: Record<string, number>;
+    // let moveValidPaths: Record<string, number>;
 
-    if (!supportMoveOrigin[1]) {
-      validPaths = getValidPathsWhenCoastsAreIrrelevant(
+    // if (!supportMoveOrigin[1]) {
+    //   validPaths = getValidPathsWhenCoastsAreIrrelevant(
+    //     supportMoveOrigin[0],
+    //     supportedUnitIsArmy
+    //   );
+    // } else {
+    //   validPaths = getValidPathsForCoastalFleet(
+    //     supportMoveOrigin[0],
+    //     supportMoveOrigin[1] === "/sc"
+    //   );
+    //
+
+    if (
+      isSupportedUnitArmy &&
+      isOrderBetweenCoastalTerritories(
         supportMoveOrigin[0],
-        supportedUnitIsArmy
-      );
-    } else {
-      validPaths = getValidPathsForCoastalFleet(
-        supportMoveOrigin[0],
-        supportMoveOrigin[1] === "/sc"
-      );
+        supportMoveDestination
+      )
+    ) {
+      return;
     }
 
-    if (!(supportMoveDestination in validPaths)) {
+    const moveValidPaths = getValidPathsFromOrigin(
+      supportMoveOrigin,
+      isSupportedUnitArmy
+    );
+
+    if (!(supportMoveDestination in moveValidPaths)) {
       doesSupportMoveFail = true;
       console.log(`failed: ${supportOrder}`);
     }
@@ -411,8 +443,10 @@ function checkSupportMoveOrderForMisorder(
     );
 
     const supportPath: string = support.getSupportMoveAssistPath();
+    const circleCenter: Coordinate = support.getSupportMoveAssistCircleCenter();
     console.log(`support path is ${supportPath}`);
-    colorSupportMoveMisorderRed(supportPath);
+    console.log(`circle center is ${(circleCenter.x, circleCenter.y)}`);
+    colorSupportMoveMisorderRed(supportPath, circleCenter);
 
     // M279,283C342,282.5 349.6,302 332.5,266.25
 
@@ -426,13 +460,8 @@ function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
   const isSupportMove: boolean = !!supportOrder[5];
 
   if (isSupportMove) {
-<<<<<<< HEAD
-    return;
-=======
     checkSupportMoveOrderForMisorder(supportOrder);
   } else {
     checkSupportHoldOrderForMisorder(supportOrder);
->>>>>>> 304a494... Mark support moves failed if destination unreachable by supporter
   }
-  checkSupportHoldOrderForMisorder(supportOrder);
 }
