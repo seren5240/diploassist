@@ -276,7 +276,6 @@ function checkSupportMoveOrderForMisorder(
 
   if (!(supportMoveDestination in validPaths)) {
     doesSupportMoveFail = true;
-    console.log(`failed: ${supportOrder}`);
   }
 
   // supported move path is invalid move order
