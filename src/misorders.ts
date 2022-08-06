@@ -242,12 +242,45 @@ function isTerritoryOccupiedByArmy(terr: string): boolean {
   return orders.match(unitRegex)?.[0][0] === "A";
 }
 
+function canSupportingUnitAccessSupportDestination(
+  supportingUnit: string[],
+  supportMoveDestination: string,
+  isSupportingUnitArmy: boolean
+): boolean {
+  const validPaths = getValidPathsFromOrigin(
+    supportingUnit,
+    isSupportingUnitArmy
+  );
+  return supportMoveDestination in validPaths;
+}
+
+function isSupportedMovePathValid(
+  supportMoveOrigin: string[],
+  supportMoveDestination: string,
+  isSupportedUnitArmy: boolean
+): boolean {
+  if (
+    isSupportedUnitArmy &&
+    isOrderBetweenCoastalTerritories(
+      supportMoveOrigin[0],
+      supportMoveDestination
+    )
+  ) {
+    return true;
+  }
+
+  const validPaths = getValidPathsFromOrigin(
+    supportMoveOrigin,
+    isSupportedUnitArmy
+  );
+
+  return supportMoveDestination in validPaths;
+}
+
 function checkSupportMoveOrderForMisorder(
   supportOrder: RegExpMatchArray
 ): void {
-  // fail if: destination territory unreachable by supporting unit
-  // fail if: supported move path is invalid move order
-  const supportingUnitIsArmy: boolean = supportOrder[0][0] === "A";
+  const isSupportingUnitArmy: boolean = supportOrder[0][0] === "A";
   const supportingUnit: string[] = supportOrder.slice(1, 3);
   const supportMoveOrigin: string[] = supportOrder.slice(3, 5);
   const isSupportedUnitArmy: boolean = isTerritoryOccupiedByArmy(
@@ -257,51 +290,19 @@ function checkSupportMoveOrderForMisorder(
     .substring(3)
     .replace("/", "");
 
-  let doesSupportMoveFail: boolean = false;
-
-  // destination territory unreachable by supporting unit
-  let validPaths: Record<string, number>;
-
-  if (!supportingUnit[1]) {
-    validPaths = getValidPathsWhenCoastsAreIrrelevant(
-      supportingUnit[0],
-      supportingUnitIsArmy
-    );
-  } else {
-    validPaths = getValidPathsForCoastalFleet(
-      supportingUnit[0],
-      supportingUnit[1] === "/sc"
-    );
-  }
-
-  if (!(supportMoveDestination in validPaths)) {
-    doesSupportMoveFail = true;
-  }
-
-  // supported move path is invalid move order
-  // skip check if already failed by first criteria above
-  if (!doesSupportMoveFail) {
-    if (
-      isSupportedUnitArmy &&
-      isOrderBetweenCoastalTerritories(
-        supportMoveOrigin[0],
-        supportMoveDestination
-      )
-    ) {
-      return;
-    }
-
-    const moveValidPaths = getValidPathsFromOrigin(
+  const doesSupportMoveSucceed: boolean =
+    canSupportingUnitAccessSupportDestination(
+      supportingUnit,
+      supportMoveDestination,
+      isSupportingUnitArmy
+    ) &&
+    isSupportedMovePathValid(
       supportMoveOrigin,
+      supportMoveDestination,
       isSupportedUnitArmy
     );
 
-    if (!(supportMoveDestination in moveValidPaths)) {
-      doesSupportMoveFail = true;
-    }
-  }
-
-  if (doesSupportMoveFail) {
+  if (!doesSupportMoveSucceed) {
     const centerOfSupportingUnit: Coordinate =
       getCenterOfOriginFromOriginRegexArray(supportingUnit);
     const centerOfSupportedUnit: Coordinate =
