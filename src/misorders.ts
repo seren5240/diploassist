@@ -239,7 +239,7 @@ function isTerritoryOccupiedByArmy(terr: string): boolean {
 
   const unitRegex = new RegExp(`[AF] ${terr}`, "gi");
 
-  return orders.match(unitRegex)[0][0] === "A";
+  return orders.match(unitRegex)?.[0][0] === "A";
 }
 
 function checkSupportMoveOrderForMisorder(
@@ -298,7 +298,6 @@ function checkSupportMoveOrderForMisorder(
 
     if (!(supportMoveDestination in moveValidPaths)) {
       doesSupportMoveFail = true;
-      console.log(`failed: ${supportOrder}`);
     }
   }
 
