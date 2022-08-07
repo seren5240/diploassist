@@ -108,7 +108,7 @@ function isOrderBetweenCoastalTerritories(
     isTerritoryLand(origin) &&
     isTerritoryLand(destination) &&
     doesTerritoryBorderWater(origin) &&
-    doesTerritoryBorderWater(destination)
+    doesTerritoryBorderWater(destination.substring(0, 3))
   );
 }
 
@@ -230,11 +230,101 @@ function checkSupportHoldOrderForMisorder(
   }
 }
 
+function isTerritoryOccupiedByArmy(terr: string): boolean {
+  if (isTerritoryWater(terr)) {
+    return false;
+  }
+
+  const orders = d3.select("#orders-text").text();
+
+  const unitRegex = new RegExp(`[AF] ${terr}`, "gi");
+
+  return orders.match(unitRegex)?.[0][0] === "A";
+}
+
+function canSupportingUnitAccessSupportDestination(
+  supportingUnit: string[],
+  supportMoveDestination: string,
+  isSupportingUnitArmy: boolean
+): boolean {
+  const validPaths = getValidPathsFromOrigin(
+    supportingUnit,
+    isSupportingUnitArmy
+  );
+  return supportMoveDestination in validPaths;
+}
+
+function isSupportedMovePathValid(
+  supportMoveOrigin: string[],
+  supportMoveDestination: string,
+  isSupportedUnitArmy: boolean
+): boolean {
+  if (
+    isSupportedUnitArmy &&
+    isOrderBetweenCoastalTerritories(
+      supportMoveOrigin[0],
+      supportMoveDestination
+    )
+  ) {
+    return true;
+  }
+
+  const validPaths = getValidPathsFromOrigin(
+    supportMoveOrigin,
+    isSupportedUnitArmy
+  );
+
+  return supportMoveDestination in validPaths;
+}
+
+function checkSupportMoveOrderForMisorder(
+  supportOrder: RegExpMatchArray
+): void {
+  const isSupportingUnitArmy: boolean = supportOrder[0][0] === "A";
+  const supportingUnit: string[] = supportOrder.slice(1, 3);
+  const supportMoveOrigin: string[] = supportOrder.slice(3, 5);
+  const isSupportedUnitArmy: boolean = isTerritoryOccupiedByArmy(
+    supportOrder[3]
+  );
+  const supportMoveDestination: string = supportOrder[5]
+    .substring(3)
+    .replace("/", "");
+
+  const doesSupportMoveSucceed: boolean =
+    canSupportingUnitAccessSupportDestination(
+      supportingUnit,
+      supportMoveDestination,
+      isSupportingUnitArmy
+    ) &&
+    isSupportedMovePathValid(
+      supportMoveOrigin,
+      supportMoveDestination,
+      isSupportedUnitArmy
+    );
+
+  if (!doesSupportMoveSucceed) {
+    const centerOfSupportingUnit: Coordinate =
+      getCenterOfOriginFromOriginRegexArray(supportingUnit);
+    const centerOfSupportedUnit: Coordinate =
+      getCenterOfOriginFromOriginRegexArray(supportMoveOrigin);
+    const centerOfSupportDestination: Coordinate =
+      getCenterOfDestinationFromDestinationRegexArray(supportOrder.slice(6, 8));
+    const support: SupportMove = new SupportMove(
+      centerOfSupportingUnit,
+      centerOfSupportedUnit,
+      centerOfSupportDestination
+    );
+
+    support.colorSupportMoveMisorderRed();
+  }
+}
+
 function checkSupportOrderForMisorder(supportOrder: RegExpMatchArray): void {
   const isSupportMove: boolean = !!supportOrder[5];
 
   if (isSupportMove) {
-    return;
+    checkSupportMoveOrderForMisorder(supportOrder);
+  } else {
+    checkSupportHoldOrderForMisorder(supportOrder);
   }
-  checkSupportHoldOrderForMisorder(supportOrder);
 }
